@@ -25,5 +25,5 @@ def setup_tracing(cfg: PhoenixConfig):
         LangChainInstrumentor().instrument(tracer_provider=tracer_provider, skip_dep_check=True)
         return tracer_provider
     except Exception as exc:  # noqa: BLE001
-        print(f"[sombeer] Phoenix tracing disabled: {exc}")
+        print(f"[sommebeer] Phoenix tracing disabled: {exc}")
         return None

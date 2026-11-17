@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import argparse
 
-from sombeer.config import get_settings
-from sombeer.graph import build_graph
-from sombeer.llm import get_chat_model
-from sombeer.retriever import BeerRetriever, connect
-from sombeer.tracing import setup_tracing
+from sommebeer.config import get_settings
+from sommebeer.graph import build_graph
+from sommebeer.llm import get_chat_model
+from sommebeer.retriever import BeerRetriever, connect
+from sommebeer.tracing import setup_tracing
 
 
 def build_agent():
@@ -39,7 +39,7 @@ def main() -> None:
 
     if args.no_phoenix:
         import os
-        os.environ["SOMBEER_PHOENIX__ENABLED"] = "false"
+        os.environ["SOMMEBEER_PHOENIX__ENABLED"] = "false"
 
     graph, settings = build_agent()
     provider = settings.llm.provider

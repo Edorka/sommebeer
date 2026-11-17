@@ -42,9 +42,9 @@ question → router (LLM intent classification, Pydantic-validated)
                                               everything traced in Phoenix
 ```
 
-- **Orchestration**: LangGraph (`sombeer/graph.py`), Pydantic-typed state
+- **Orchestration**: LangGraph (`sommebeer/graph.py`), Pydantic-typed state
 - **Config**: pydantic-settings — one `.env`, validated at startup
-  (`SOMBEER_LLM__*`, `SOMBEER_WEAVIATE__*`, `SOMBEER_PHOENIX__*`)
+  (`SOMMEBEER_LLM__*`, `SOMMEBEER_WEAVIATE__*`, `SOMMEBEER_PHOENIX__*`)
 - **LLMs**: `local` (llama-server/Ollama, OpenAI-compatible) · `deepinfra` ·
   `gcp` (Vertex AI)
 - **Retrieval**: Weaviate (`Beer` collection), 11-dim taste-profile vectors (taste-alike similarity)
@@ -74,14 +74,14 @@ In `.env`:
 
 ```ini
 # local
-SOMBEER_LLM__PROVIDER=local
+SOMMEBEER_LLM__PROVIDER=local
 # deepinfra
-SOMBEER_LLM__PROVIDER=deepinfra
-SOMBEER_LLM__DI_MODEL=Qwen/Qwen2.5-72B-Instruct
-SOMBEER_LLM__DI_API_KEY=...
+SOMMEBEER_LLM__PROVIDER=deepinfra
+SOMMEBEER_LLM__DI_MODEL=Qwen/Qwen2.5-72B-Instruct
+SOMMEBEER_LLM__DI_API_KEY=...
 # gcp
-SOMBEER_LLM__PROVIDER=gcp
-SOMBEER_LLM__GCP_PROJECT=my-project
+SOMMEBEER_LLM__PROVIDER=gcp
+SOMMEBEER_LLM__GCP_PROJECT=my-project
 ```
 
 ## Tags

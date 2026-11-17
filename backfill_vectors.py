@@ -8,8 +8,8 @@ Usage:  .venv/bin/python backfill_vectors.py
 Idempotent: skips beers that already have a vector.
 """
 
-from sombeer.config import get_settings
-from sombeer.retriever import connect
+from sommebeer.config import get_settings
+from sommebeer.retriever import connect
 
 _TASTE_PROPS = ["astringency", "body", "alcohol", "bitter", "sweet", "sour",
                 "salty", "fruits", "hoppy", "spices", "malty"]

@@ -32,14 +32,14 @@ class LLMConfig(BaseModel):
     @classmethod
     def _di_needs_key(cls, v, info):
         if info.data.get("provider") == "deepinfra" and not v:
-            raise ValueError("SOMBEER_LLM__DI_API_KEY is required when PROVIDER=deepinfra")
+            raise ValueError("SOMMEBEER_LLM__DI_API_KEY is required when PROVIDER=deepinfra")
         return v
 
     @field_validator("gcp_project")
     @classmethod
     def _gcp_needs_project(cls, v, info):
         if info.data.get("provider") == "gcp" and not v:
-            raise ValueError("SOMBEER_LLM__GCP_PROJECT is required when PROVIDER=gcp")
+            raise ValueError("SOMMEBEER_LLM__GCP_PROJECT is required when PROVIDER=gcp")
         return v
 
 
@@ -61,7 +61,7 @@ class PhoenixConfig(BaseModel):
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_prefix="SOMBEER_",
+        env_prefix="SOMMEBEER_",
         env_nested_delimiter="__",
         extra="ignore",
     )
