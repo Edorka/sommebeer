@@ -4,6 +4,11 @@ A kind and helpful beer shop tender agent. Answers "recommend me an IPA" or
 "something like Flower Power" using a Weaviate vector database of 3,197 beers,
 with pluggable LLMs and Phoenix tracing.
 
+> **Data source**: [beertor](./beertor) (git submodule) — the SQLite beer.db +
+> Weaviate vector store that powers the beer knowledge. Clone with
+> `git clone --recurse-submodules`.
+
+
 ## Architecture
 
 ```

@@ -1,0 +1,3 @@
+[submodule "beertor"]
+	path = beertor
+	url = https://github.com/Edorka/beertor.git
