@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weaviate
+  labels: { app: weaviate }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: weaviate } }
+  template:
+    metadata: { labels: { app: weaviate } }
+    spec:
+      containers:
+        - name: weaviate
+          image: semitechnologies/weaviate:1.33.0
+          ports:
+            - { name: http, containerPort: 8080 }
+            - { name: grpc, containerPort: 50051 }
+          env:
+            - { name: QUERY_DEFAULTS_LIMIT, value: "25" }
+            - { name: AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED, value: "true" }
+            - { name: PERSISTENCE_DATA_PATH, value: /var/lib/weaviate }
+            - { name: DEFAULT_VECTORIZER_MODULE, value: none } # vectors come from the client
+            - { name: ENABLE_MODULES, value: "" }
+            - { name: CLUSTER_HOSTNAME, value: node1 }
+          resources:
+            requests: { memory: 512Mi, cpu: 250m }
+            limits: { memory: 2Gi, cpu: "1" }
+          readinessProbe: { httpGet: { path: /v1/.well-known/ready, port: 8080 }, periodSeconds: 10 }
+          volumeMounts: [ { name: data, mountPath: /var/lib/weaviate } ]
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: weaviate-data }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: weaviate-data }
+spec:
+  accessModes: [ ReadWriteOnce ]
+  resources: { requests: { storage: 5Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: weaviate }
+spec:
+  selector: { app: weaviate }
+  ports:
+    - { name: http, port: 8080, targetPort: http }
+    - { name: grpc, port: 50051, targetPort: grpc }

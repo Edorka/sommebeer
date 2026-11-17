@@ -21,6 +21,7 @@
 ![DeepInfra](https://img.shields.io/badge/LLM_provider-DeepInfra-0080FF)
 ![Vertex AI](https://img.shields.io/badge/LLM_provider-GCP_Vertex_AI-4285F4?logo=googlecloud&logoColor=white)
 ![OpenAI-compatible](https://img.shields.io/badge/API-OpenAI--compatible-412991?logo=openai&logoColor=white)
+![FastAPI](https://img.shields.io/badge/HTTP-FastAPI-009688?logo=fastapi&logoColor=white)
 ![Git submodule](https://img.shields.io/badge/data-beertor-F0DB4F?logo=gitbook&logoColor=black)
 
 A kind and helpful beer shop tender agent. Answers "recommend me an IPA" or
@@ -113,7 +114,7 @@ automatically when the stack is up, and auto-skip otherwise.
 
 ## Tags
 
-`python` `langgraph` `langchain` `pydantic` `pydantic-settings` `weaviate`
+`python` `langgraph` `langchain` `fastapi` `pydantic` `pydantic-settings` `weaviate`
 `vector-database` `bm25` `near-vector-search` `rag` `llm-agent` `llama-cpp`
 `qwen3` `openai-compatible-api` `deepinfra` `google-cloud` `vertex-ai`
 `arize-phoenix` `opentelemetry` `openinference` `beer`
