@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,19 +28,15 @@ class LLMConfig(BaseModel):
     gcp_project: str | None = None
     gcp_location: str = "us-central1"
 
-    @field_validator("di_api_key")
-    @classmethod
-    def _di_needs_key(cls, v, info):
-        if info.data.get("provider") == "deepinfra" and not v:
-            raise ValueError("SOMMEBEER_LLM__DI_API_KEY is required when PROVIDER=deepinfra")
-        return v
-
-    @field_validator("gcp_project")
-    @classmethod
-    def _gcp_needs_project(cls, v, info):
-        if info.data.get("provider") == "gcp" and not v:
-            raise ValueError("SOMMEBEER_LLM__GCP_PROJECT is required when PROVIDER=gcp")
-        return v
+    @model_validator(mode="after")
+    def _provider_requirements(self):
+        if self.provider == "deepinfra" and not self.di_api_key:
+            raise ValueError(
+                "SOMMEBEER_LLM__DI_API_KEY is required when PROVIDER=deepinfra")
+        if self.provider == "gcp" and not self.gcp_project:
+            raise ValueError(
+                "SOMMEBEER_LLM__GCP_PROJECT is required when PROVIDER=gcp")
+        return self
 
 
 class WeaviateConfig(BaseModel):

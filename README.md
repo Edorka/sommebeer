@@ -84,6 +84,15 @@ SOMMEBEER_LLM__PROVIDER=gcp
 SOMMEBEER_LLM__GCP_PROJECT=my-project
 ```
 
+## Tests
+
+```bash
+.venv/bin/python -m pytest tests/    # 35 unit tests, no services needed
+```
+
+Integration tests (live Weaviate queries + a full agent roundtrip) run
+automatically when the stack is up, and auto-skip otherwise.
+
 ## Tags
 
 `python` `langgraph` `langchain` `pydantic` `pydantic-settings` `weaviate`
