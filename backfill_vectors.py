@@ -1,15 +1,25 @@
-#!/usr/bin/env python3
-"""One-time backfill: embed all Beer objects with local MiniLM and store vectors.
+"""One-time backfill: store each beer's taste profile as its vector.
+
+The Beer collection uses 11-dim taste-profile vectors (the numeric properties
+astringency, body, alcohol, bitter, sweet, sour, salty, fruits, hoppy, spices,
+malty — each divided by 100). 'Similar beers' then means 'tastes alike'.
 
 Usage:  .venv/bin/python backfill_vectors.py
-Takes ~3-5 minutes on CPU (3,197 beers). Safe to re-run (skips nothing, just
-re-embeds and overwrites — deterministic model, same vectors).
+Idempotent: skips beers that already have a vector.
 """
 
 from sombeer.config import get_settings
-from sombeer.embedder import embed
 from sombeer.retriever import connect
-from sombeer.schemas import beer_text
+
+_TASTE_PROPS = ["astringency", "body", "alcohol", "bitter", "sweet", "sour",
+                "salty", "fruits", "hoppy", "spices", "malty"]
+
+
+def taste_vector(props: dict) -> list[float] | None:
+    values = [props.get(p) for p in _TASTE_PROPS]
+    if any(v is None for v in values):
+        return None
+    return [float(v) / 100.0 for v in values]
 
 
 def main() -> None:
@@ -18,22 +28,22 @@ def main() -> None:
     try:
         coll = client.collections.get(cfg.collection)
         total = coll.aggregate.over_all(total_count=True).total_count
-        print(f"embedding {total} beers from '{cfg.collection}'…")
+        print(f"backfilling taste-profile vectors for {total} beers…")
 
-        done = 0
+        done, skipped = 0, 0
         with coll.batch.fixed_size(batch_size=64) as batch:
             for obj in coll.iterator(include_vector=True):
                 vec = obj.vector.get("default") if isinstance(obj.vector, dict) \
                     else obj.vector
-                if vec:  # already has a vector — skip on re-runs
+                if vec:
+                    skipped += 1
                     continue
-                text = beer_text(obj.properties)
-                (e,) = embed([text])
-                batch.update(uuid=obj.uuid, vector=e)
+                v = taste_vector(obj.properties)
+                if v is None:
+                    continue
+                batch.update(uuid=obj.uuid, vector=v)
                 done += 1
-                if done % 256 == 0:
-                    print(f"  {done} embedded…")
-        print(f"done: {done} beers embedded and stored in Weaviate")
+        print(f"done: {done} embedded, {skipped} already had vectors")
     finally:
         client.close()
 

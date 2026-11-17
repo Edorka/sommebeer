@@ -9,7 +9,7 @@ with pluggable LLMs and Phoenix tracing.
 ```
 question → router (LLM intent classification, Pydantic-validated)
    ├─ by_style    → BM25 over style fields
-   ├─ by_likeness → near_vector with the reference beer's own embedding
+   ├─ by_likeness → near_vector with the reference beer's own taste-profile vector
    └─ general     → no retrieval
 → generate: grounded system prompt ("recommend ONLY from stock") → answer
                                               everything traced in Phoenix
@@ -20,7 +20,7 @@ question → router (LLM intent classification, Pydantic-validated)
   (`SOMBEER_LLM__*`, `SOMBEER_WEAVIATE__*`, `SOMBEER_PHOENIX__*`)
 - **LLMs**: `local` (llama-server/Ollama, OpenAI-compatible) · `deepinfra` ·
   `gcp` (Vertex AI)
-- **Retrieval**: Weaviate (`Beer` collection), local MiniLM embeddings
+- **Retrieval**: Weaviate (`Beer` collection), 11-dim taste-profile vectors (taste-alike similarity)
 - **Tracing**: Arize Phoenix (OTel + OpenInference LangChain instrumentation)
 
 ## Setup
@@ -29,7 +29,7 @@ question → router (LLM intent classification, Pydantic-validated)
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 cp .env.example .env            # adjust provider/endpoints if needed
-.venv/bin/python backfill_vectors.py   # one-time: embed 3,197 beers (~3-5 min)
+.venv/bin/python backfill_vectors.py   # one-time: taste-profile vectors (skips already-vectorized)
 ```
 
 ## Run

@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 from opentelemetry import trace
-from weaviate.collections.queries.metadata import MetadataQuery
+from weaviate.classes.query import MetadataQuery
 
 from .config import WeaviateConfig
-from .embedder import embed_one
-from .schemas import BeerRecord, beer_text
+from .schemas import BeerRecord
 
 tracer = trace.get_tracer(__name__)
 
@@ -63,7 +62,12 @@ class BeerRetriever:
             return records
 
     def by_likeness(self, beer_name: str) -> list[BeerRecord]:
-        """Semantic neighbours of the named beer (its own vector as query)."""
+        """Semantic neighbours of the named beer (its own taste-profile vector).
+
+        The Beer collection stores 11-dim taste-profile vectors, so 'similar'
+        means 'tastes alike'. If the reference beer isn't in stock, fall back
+        to a keyword search on the name/description.
+        """
         with tracer.start_as_current_span("retrieve_by_likeness") as span:
             span.set_attribute("openinference.span.kind", "RETRIEVER")
             span.set_attribute("input.value", beer_name)
@@ -73,21 +77,27 @@ class BeerRetriever:
                 query=beer_name, limit=1, query_properties=_NAME_PROPS,
             ).objects
             if ref:
-                obj = self.collection.query.get_by_id(
+                obj = self.collection.query.fetch_object_by_id(
                     ref[0].uuid, include_vector=True)
-                vec = obj.vector.get("default") if isinstance(obj.vector, dict) else obj.vector
+                vec = obj.vector.get("default") if isinstance(obj.vector, dict) \
+                    else obj.vector
             else:
-                vec = embed_one(beer_text({"name": beer_name}))
+                vec = None
             ref_uuid = str(ref[0].uuid) if ref else None
 
-            # 2. semantic search with that vector
-            res = self.collection.query.near_vector(
-                vector=vec, limit=self.cfg.limit + 1,
-                return_metadata=MetadataQuery(distance=True),
-            )
-            records = self._to_records(res, exclude_uuid=ref_uuid)
-            if vec is None:
-                records = []  # vectors not backfilled yet
+            # 2. semantic search with that vector (or keyword fallback)
+            if vec:
+                res = self.collection.query.near_vector(
+                    vec, limit=self.cfg.limit + 1,
+                    return_metadata=MetadataQuery(distance=True),
+                )
+                records = self._to_records(res, exclude_uuid=ref_uuid)
+            else:
+                records = self._to_records(self.collection.query.bm25(
+                    query=beer_name, limit=self.cfg.limit,
+                    query_properties=_STYLE_PROPS,
+                    return_metadata=MetadataQuery(score=True),
+                ))
             span.set_attribute("retrieved_documents", len(records))
             return records
 

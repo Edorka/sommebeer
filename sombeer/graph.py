@@ -10,7 +10,7 @@ from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
 from .retriever import BeerRetriever
-from .schemas import RouterDecision
+from .schemas import BeerRecord, RouterDecision
 
 # ── prompts ────────────────────────────────────────────────────────────────
 
@@ -49,7 +49,7 @@ class AgentState(BaseModel):
     intent: str | None = None
     style: str | None = None
     beer_name: str | None = None
-    beers: list = Field(default_factory=list)
+    beers: list[BeerRecord] = Field(default_factory=list)
     answer: str | None = None
 
 
@@ -103,9 +103,11 @@ def make_retrieve_node(retriever: BeerRetriever):
 
 def make_generate_node(llm):
     def generate_node(state: AgentState) -> dict:
-        cards = "\n".join(b["card"]() if isinstance(b, dict) else b.card()
-                         for b in state.beers)
-        stock = f"STOCK:\n{cards}" if cards else "STOCK: (empty)"
+        cards = "\n".join(b.card() for b in state.beers)
+        stock = f"STOCK:\n{cards}" if cards else \
+            "STOCK: (no beer search was made for this message). Do NOT name or " \
+            "invent any specific beer. If the customer wants a recommendation, " \
+            "ask what style they usually enjoy."
         answer = llm.invoke([
             SystemMessage(content=TENDER_SYSTEM),
             HumanMessage(content=f"{stock}\n\nCUSTOMER: {state.question}"),
@@ -124,7 +126,7 @@ def build_graph(llm, retriever: BeerRetriever):
     g.add_edge(START, "router")
     g.add_conditional_edges(
         "router",
-        lambda s: "retrieve" if s["intent"] in ("by_style", "by_likeness") else "generate",
+        lambda s: "retrieve" if s.intent in ("by_style", "by_likeness") else "generate",
         {"retrieve": "retrieve", "generate": "generate"},
     )
     g.add_edge("retrieve", "generate")

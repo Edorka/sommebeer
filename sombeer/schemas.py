@@ -21,7 +21,6 @@ class RouterDecision(BaseModel):
 
 class BeerRecord(BaseModel):
     """A beer as retrieved from Weaviate."""
-
     name: str
     full_name: str | None = None
     brewery: str | None = None
@@ -47,16 +46,3 @@ class BeerRecord(BaseModel):
             desc = desc.strip()
             head += f". {desc[:220]}"
         return head
-
-
-def beer_text(props: dict) -> str:
-    """Text that gets embedded for a beer. Keep in sync with backfill_vectors.py."""
-    name = props.get("name") or ""
-    full_name = props.get("full_name") or name
-    style_bits = " ".join(
-        str(p) for p in (props.get("style_bjcp"), props.get("style_category")) if p
-    )
-    body = " ".join(
-        str(p) for p in (props.get("tagline"), props.get("description")) if p
-    )
-    return f"{full_name} | {style_bits} | {body or name}".strip()
