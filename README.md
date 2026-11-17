@@ -1,5 +1,7 @@
 # sommebeer 🍺
 
+[![tests](https://github.com/Edorka/sommebeer/actions/workflows/tests.yml/badge.svg)](https://github.com/Edorka/sommebeer/actions/workflows/tests.yml)
+
 > ⚠️ **Alcohol notice**: alcohol consumption is **discouraged**; in particular
 > during pregnancy, breastfeeding, while on medication and when driving. This
 > project is intended exclusively for **adults** (18+ / legal drinking age
