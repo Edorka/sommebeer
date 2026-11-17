@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>sommebeer 🍺</title>
+    <!-- page background only; everything else lives inside the component's shadow styles -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(1200px 400px at 50% -100px, var(--paper-deep, #efe4d0), transparent),
+          var(--paper, #f7f0e3);
+      }
+    </style>
+  </head>
+  <body>
+    <sommebeer-chat></sommebeer-chat>
+    <script type="module" src="/src/index.js"></script>
+  </body>
+</html>

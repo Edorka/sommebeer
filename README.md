@@ -58,7 +58,7 @@ question → router (LLM intent classification, Pydantic-validated)
 sommebeer/          # core agent package (graph, retriever, llm, config, tracing)
 cli/agent.py        # CLI deliverable — thin wiring only
 api/                # HTTP deliverable — FastAPI + its own requirements
-frontend/           # future UI — README holds the API contract
+frontend/           # UI — Lit web components, served by Vite
 tools/              # one-off ops scripts (vector backfill)
 tests/              # one suite for core + cli + api
 ```
@@ -85,6 +85,9 @@ phoenix serve --port 6006       # optional: tracing UI (default endpoint)
 .venv/bin/uvicorn api.main:app --reload
 curl -s localhost:8000/chat -H 'Content-Type: application/json' \
      -d '{"question": "something similar to Flower Power"}'
+
+# Web UI — http://localhost:5173 (Vite proxies /chat + /health to the API)
+cd frontend && npm install && npm run dev
 ```
 
 ## Switching LLM provider
