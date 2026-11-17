@@ -1,0 +1,10 @@
+langgraph>=0.2.60
+langchain>=0.3.0
+langchain-openai>=0.3.0
+langchain-google-vertexai>=2.0.0
+weaviate-client>=4.10.0
+pydantic>=2.9
+pydantic-settings>=2.6
+sentence-transformers>=3.3
+arize-phoenix>=7.0
+openinference-instrumentation-langchain>=0.1.35
