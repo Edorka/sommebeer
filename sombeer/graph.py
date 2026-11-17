@@ -18,7 +18,8 @@ ROUTER_SYSTEM = """You classify messages sent to a beer shop assistant.
 Return ONLY a JSON object (no markdown, no extra text) with this schema:
 {"intent": "by_style" | "by_likeness" | "general",
  "style": <string or null>,
- "beer_name": <string or null>}
+ "beer_name": <string or null>,
+ "count": <integer or null>}
 
 Rules:
 - by_style: the customer asks for beers of a style or category ("recommend an IPA",
@@ -26,6 +27,8 @@ Rules:
 - by_likeness: the customer mentions an existing beer as reference ("something like
   Flower Power IPA", "similar to Guinness") → fill "beer_name".
 - general: greetings or questions that need no beer search.
+- count: only when the customer explicitly asks for a number ("give me 6 stouts",
+  "top 3 IPAs") → that number; otherwise null.
 """
 
 TENDER_SYSTEM = """You are Sam, the tender of a small, cozy beer shop. You are warm,
@@ -37,8 +40,9 @@ Hard rules:
 - If the stock list is empty or nothing matches, say kindly that the shop doesn't have
   anything for that right now, and suggest the closest thing on the list instead.
 - Keep answers short and friendly, like a real conversation at the counter.
-- When recommending, mention each beer's brewery, style and ABV. Two to five beers per
-  answer, with one appetizing line about each.
+- When recommending, mention each beer's brewery, style and ABV. Give the number
+  of beers the customer asked for; otherwise two to five, with one appetizing line
+  about each.
 """
 
 
@@ -49,6 +53,7 @@ class AgentState(BaseModel):
     intent: str | None = None
     style: str | None = None
     beer_name: str | None = None
+    count: int | None = None
     beers: list[BeerRecord] = Field(default_factory=list)
     answer: str | None = None
 
@@ -77,6 +82,7 @@ def make_router_node(llm):
                 intent=data.get("intent", "general"),
                 style=data.get("style"),
                 beer_name=data.get("beer_name"),
+                count=data.get("count"),
             )
         except Exception:  # noqa: BLE001 — never let routing kill the chat
             decision = RouterDecision(intent="general")
@@ -85,16 +91,17 @@ def make_router_node(llm):
         if decision.intent == "by_likeness" and not decision.beer_name:
             decision = RouterDecision(intent="general")
         return {"intent": decision.intent, "style": decision.style,
-                "beer_name": decision.beer_name}
+                "beer_name": decision.beer_name, "count": decision.count}
     return router_node
 
 
 def make_retrieve_node(retriever: BeerRetriever):
     def retrieve_node(state: AgentState) -> dict:
+        limit = min(state.count or 0, 20) if state.count else None
         if state.intent == "by_style" and state.style:
-            beers = retriever.by_style(state.style)
+            beers = retriever.by_style(state.style, limit=limit)
         elif state.intent == "by_likeness" and state.beer_name:
-            beers = retriever.by_likeness(state.beer_name)
+            beers = retriever.by_likeness(state.beer_name, limit=limit)
         else:
             beers = []
         return {"beers": [b.model_dump() for b in beers]}

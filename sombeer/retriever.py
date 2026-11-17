@@ -47,13 +47,13 @@ class BeerRetriever:
         return out
 
     # ── public API ─────────────────────────────────────────────────────
-    def by_style(self, style: str) -> list[BeerRecord]:
+    def by_style(self, style: str, limit: int | None = None) -> list[BeerRecord]:
         """Keyword search biased towards the style fields."""
         with tracer.start_as_current_span("retrieve_by_style") as span:
             span.set_attribute("openinference.span.kind", "RETRIEVER")
             span.set_attribute("input.value", style)
             res = self.collection.query.bm25(
-                query=style, limit=self.cfg.limit,
+                query=style, limit=limit or self.cfg.limit,
                 query_properties=_STYLE_PROPS,
                 return_metadata=MetadataQuery(score=True),
             )
@@ -61,13 +61,14 @@ class BeerRetriever:
             span.set_attribute("retrieved_documents", len(records))
             return records
 
-    def by_likeness(self, beer_name: str) -> list[BeerRecord]:
+    def by_likeness(self, beer_name: str, limit: int | None = None) -> list[BeerRecord]:
         """Semantic neighbours of the named beer (its own taste-profile vector).
 
         The Beer collection stores 11-dim taste-profile vectors, so 'similar'
         means 'tastes alike'. If the reference beer isn't in stock, fall back
         to a keyword search on the name/description.
         """
+        n = limit or self.cfg.limit
         with tracer.start_as_current_span("retrieve_by_likeness") as span:
             span.set_attribute("openinference.span.kind", "RETRIEVER")
             span.set_attribute("input.value", beer_name)
@@ -88,13 +89,13 @@ class BeerRetriever:
             # 2. semantic search with that vector (or keyword fallback)
             if vec:
                 res = self.collection.query.near_vector(
-                    vec, limit=self.cfg.limit + 1,
+                    vec, limit=n + 1,
                     return_metadata=MetadataQuery(distance=True),
                 )
                 records = self._to_records(res, exclude_uuid=ref_uuid)
             else:
                 records = self._to_records(self.collection.query.bm25(
-                    query=beer_name, limit=self.cfg.limit,
+                    query=beer_name, limit=n,
                     query_properties=_STYLE_PROPS,
                     return_metadata=MetadataQuery(score=True),
                 ))

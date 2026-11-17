@@ -17,6 +17,9 @@ class RouterDecision(BaseModel):
     beer_name: str | None = Field(
         None, description="beer name mentioned, e.g. 'Flower Power' — for by_likeness"
     )
+    count: int | None = Field(
+        None, description="how many beers the customer asked for, if stated", ge=1
+    )
 
 
 class BeerRecord(BaseModel):
