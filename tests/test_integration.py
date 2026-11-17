@@ -47,7 +47,7 @@ class TestWeaviate:
     def test_by_style_returns_matching_beers(self, retriever):
         records = retriever.by_style("IPA")
         assert len(records) == settings.weaviate.limit
-        assert all(r.style_bjcp for r in records)
+        assert all(beer.style_bjcp for beer in records)
 
     def test_by_likeness_returns_neighbours(self, retriever):
         records = retriever.by_likeness("Flower Power India Pale Ale")

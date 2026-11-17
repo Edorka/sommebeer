@@ -39,13 +39,13 @@ class BeerRecord(BaseModel):
         head = f"- {self.name}"
         if self.brewery:
             head += f" ({self.brewery})"
-        bits = [b for b in (self.style_bjcp, self.style_category) if b]
-        if bits:
-            head += f" — {' / '.join(bits)}"
+        style_bits = [style for style in (self.style_bjcp, self.style_category)
+                      if style]
+        if style_bits:
+            head += f" — {' / '.join(style_bits)}"
         if self.abv is not None:
             head += f", {self.abv}% ABV"
-        desc = self.description or self.tagline or ""
-        if desc:
-            desc = desc.strip()
-            head += f". {desc[:220]}"
+        description = self.description or self.tagline or ""
+        if description:
+            head += f". {description.strip()[:220]}"
         return head

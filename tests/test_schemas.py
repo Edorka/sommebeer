@@ -8,14 +8,14 @@ from sommebeer.schemas import BeerRecord, RouterDecision
 
 class TestRouterDecision:
     def test_valid_style(self):
-        d = RouterDecision(intent="by_style", style="IPA", count=6)
-        assert d.intent == "by_style"
-        assert d.count == 6
+        decision = RouterDecision(intent="by_style", style="IPA", count=6)
+        assert decision.intent == "by_style"
+        assert decision.count == 6
 
     def test_valid_likeness(self):
-        d = RouterDecision(intent="by_likeness", beer_name="Pliny The Elder")
-        assert d.beer_name == "Pliny The Elder"
-        assert d.count is None
+        decision = RouterDecision(intent="by_likeness", beer_name="Pliny The Elder")
+        assert decision.beer_name == "Pliny The Elder"
+        assert decision.count is None
 
     def test_invalid_intent_rejected(self):
         with pytest.raises(ValidationError):

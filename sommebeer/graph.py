@@ -61,63 +61,90 @@ class AgentState(BaseModel):
 # ── nodes ──────────────────────────────────────────────────────────────────
 
 def _parse_json(text: str) -> dict | None:
-    m = re.search(r"\{.*\}", text, re.DOTALL)
-    if not m:
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
         return None
     try:
-        return json.loads(m.group(0))
+        return json.loads(match.group(0))
     except json.JSONDecodeError:
         return None
 
 
+def _sanitize(decision: RouterDecision) -> RouterDecision:
+    """An intent that lacks its payload is really just small talk."""
+    if decision.intent == "by_style" and not decision.style:
+        return RouterDecision(intent="general")
+    if decision.intent == "by_likeness" and not decision.beer_name:
+        return RouterDecision(intent="general")
+    return decision
+
+
+def _decision_from(data: dict) -> RouterDecision:
+    return RouterDecision(
+        intent=data.get("intent", "general"),
+        style=data.get("style"),
+        beer_name=data.get("beer_name"),
+        count=data.get("count"),
+    )
+
+
+def _route(llm, question: str) -> RouterDecision:
+    """Ask the LLM to classify the message; never raise, never guess."""
+    try:
+        raw = llm.invoke([
+            SystemMessage(content=ROUTER_SYSTEM),
+            HumanMessage(content=question),
+        ]).content
+        data = _parse_json(raw if isinstance(raw, str) else str(raw)) or {}
+        decision = _decision_from(data)
+    except Exception:  # noqa: BLE001 — never let routing kill the chat
+        return RouterDecision(intent="general")
+    return _sanitize(decision)
+
+
 def make_router_node(llm):
     def router_node(state: AgentState) -> dict:
-        try:
-            raw = llm.invoke([
-                SystemMessage(content=ROUTER_SYSTEM),
-                HumanMessage(content=state.question),
-            ]).content
-            data = _parse_json(raw if isinstance(raw, str) else str(raw)) or {}
-            decision = RouterDecision(
-                intent=data.get("intent", "general"),
-                style=data.get("style"),
-                beer_name=data.get("beer_name"),
-                count=data.get("count"),
-            )
-        except Exception:  # noqa: BLE001 — never let routing kill the chat
-            decision = RouterDecision(intent="general")
-        if decision.intent == "by_style" and not decision.style:
-            decision = RouterDecision(intent="general")
-        if decision.intent == "by_likeness" and not decision.beer_name:
-            decision = RouterDecision(intent="general")
+        decision = _route(llm, state.question)
         return {"intent": decision.intent, "style": decision.style,
                 "beer_name": decision.beer_name, "count": decision.count}
     return router_node
 
 
+def _requested_limit(state: AgentState) -> int | None:
+    """The customer's count, clamped, or the configured default."""
+    if not state.count:
+        return None
+    return min(state.count, 20)
+
+
 def make_retrieve_node(retriever: BeerRetriever):
     def retrieve_node(state: AgentState) -> dict:
-        limit = min(state.count or 0, 20) if state.count else None
+        limit = _requested_limit(state)
         if state.intent == "by_style" and state.style:
             beers = retriever.by_style(state.style, limit=limit)
         elif state.intent == "by_likeness" and state.beer_name:
             beers = retriever.by_likeness(state.beer_name, limit=limit)
         else:
             beers = []
-        return {"beers": [b.model_dump() for b in beers]}
+        return {"beers": [beer.model_dump() for beer in beers]}
     return retrieve_node
+
+
+def _stock_block(beers: list[BeerRecord]) -> str:
+    cards = "\n".join(beer.card() for beer in beers)
+    if cards:
+        return f"STOCK:\n{cards}"
+    return ("STOCK: (no beer search was made for this message). Do NOT name or "
+            "invent any specific beer. If the customer wants a recommendation, "
+            "ask what style they usually enjoy.")
 
 
 def make_generate_node(llm):
     def generate_node(state: AgentState) -> dict:
-        cards = "\n".join(b.card() for b in state.beers)
-        stock = f"STOCK:\n{cards}" if cards else \
-            "STOCK: (no beer search was made for this message). Do NOT name or " \
-            "invent any specific beer. If the customer wants a recommendation, " \
-            "ask what style they usually enjoy."
+        prompt = f"{_stock_block(state.beers)}\n\nCUSTOMER: {state.question}"
         answer = llm.invoke([
             SystemMessage(content=TENDER_SYSTEM),
-            HumanMessage(content=f"{stock}\n\nCUSTOMER: {state.question}"),
+            HumanMessage(content=prompt),
         ]).content
         return {"answer": answer if isinstance(answer, str) else str(answer)}
     return generate_node
@@ -125,17 +152,22 @@ def make_generate_node(llm):
 
 # ── graph assembly ─────────────────────────────────────────────────────────
 
+def _needs_retrieval(state: AgentState) -> str:
+    if state.intent in ("by_style", "by_likeness"):
+        return "retrieve"
+    return "generate"
+
+
 def build_graph(llm, retriever: BeerRetriever):
-    g = StateGraph(AgentState)
-    g.add_node("router", make_router_node(llm))
-    g.add_node("retrieve", make_retrieve_node(retriever))
-    g.add_node("generate", make_generate_node(llm))
-    g.add_edge(START, "router")
-    g.add_conditional_edges(
-        "router",
-        lambda s: "retrieve" if s.intent in ("by_style", "by_likeness") else "generate",
+    builder = StateGraph(AgentState)
+    builder.add_node("router", make_router_node(llm))
+    builder.add_node("retrieve", make_retrieve_node(retriever))
+    builder.add_node("generate", make_generate_node(llm))
+    builder.add_edge(START, "router")
+    builder.add_conditional_edges(
+        "router", _needs_retrieval,
         {"retrieve": "retrieve", "generate": "generate"},
     )
-    g.add_edge("retrieve", "generate")
-    g.add_edge("generate", END)
-    return g.compile()
+    builder.add_edge("retrieve", "generate")
+    builder.add_edge("generate", END)
+    return builder.compile()

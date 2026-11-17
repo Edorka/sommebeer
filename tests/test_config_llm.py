@@ -40,15 +40,15 @@ class TestEnvLoading:
     def test_env_prefix_is_sommebeer(self, monkeypatch):
         monkeypatch.setenv("SOMMEBEER_LLM__PROVIDER", "local")
         monkeypatch.setenv("SOMMEBEER_LLM__TEMPERATURE", "0.1")
-        s = get_settings()
-        assert s.llm.provider == "local"
-        assert s.llm.temperature == 0.1
+        settings = get_settings()
+        assert settings.llm.provider == "local"
+        assert settings.llm.temperature == 0.1
 
     def test_weaviate_defaults(self):
-        s = get_settings()
-        assert s.weaviate.host == "localhost"
-        assert s.weaviate.port == 8080
-        assert s.weaviate.collection == "Beer"
+        settings = get_settings()
+        assert settings.weaviate.host == "localhost"
+        assert settings.weaviate.port == 8080
+        assert settings.weaviate.collection == "Beer"
 
 
 class TestFactory:
