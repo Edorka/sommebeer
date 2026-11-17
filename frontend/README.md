@@ -50,31 +50,10 @@ src/markdown.js                  tiny safe Markdown → Lit template parts
 
 ## API contract (v1)
 
-### `POST /chat`
+The UI speaks exactly two endpoints, defined in [`../api/README.md`](../api/README.md):
 
-```bash
-curl -s localhost:8000/chat \
-  -H 'Content-Type: application/json' \
-  -d '{"question": "recommend me 2 IPAs"}'
-```
-
-Request:
-
-```json
-{"question": "recommend me 2 IPAs"}
-```
-
-Response — `answer` is **Markdown** (bold names, numbered lists), ready to render:
-
-```json
-{"answer": "Sure! Here are **Sculpin** … and **60 Minute IPA** …"}
-```
-
-### `GET /health`
-
-```json
-{"status": "ok", "weaviate": true, "llm": true}
-```
+- `POST /chat` → `{"question": …}` → `{"answer": "<markdown>"}`
+- `GET /health` → `{"status": "ok", "weaviate": true, "llm": true}`
 
 ## Notes
 
