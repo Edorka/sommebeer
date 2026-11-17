@@ -1,4 +1,11 @@
-# sombeer 🍺
+# sommebeer 🍺
+
+> ⚠️ **Alcohol notice**: alcohol consumption is **discouraged**; in particular
+> during pregnancy, breastfeeding, while on medication and when driving. This
+> project is intended exclusively for **adults** (18+ / legal drinking age
+> depending on jurisdiction) and aims to be an informative, responsible
+> recommendation tool. Drink in moderation and safely; when in doubt, consult
+> a healthcare professional.
 
 ![Python](https://img.shields.io/badge/Python-3.12+-blue?logo=python&logoColor=white)
 ![LangGraph](https://img.shields.io/badge/agent-LangGraph-1C3C3C?logo=langchain&logoColor=white)

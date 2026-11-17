@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""sombeer — the beer shop tender. CLI chat.
+"""sommebeer — the beer shop tender. CLI chat.
 
 Usage:
   .venv/bin/python agent.py                      # interactive chat

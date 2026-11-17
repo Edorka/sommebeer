@@ -1,1 +1,1 @@
-"""sombeer — a kind and helpful beer shop tender agent."""
+"""sommebeer — a kind and helpful beer shop tender agent."""
