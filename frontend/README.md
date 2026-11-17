@@ -6,6 +6,12 @@ The UI for sommebeer — will talk to the HTTP API in [`../api/`](../api/).
 
 ### `POST /chat`
 
+```bash
+curl -s localhost:8000/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"question": "recommend me 2 IPAs"}'
+```
+
 Request:
 
 ```json
