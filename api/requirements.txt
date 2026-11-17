@@ -1,0 +1,7 @@
+# Web deliverable extras — the core + CLI deps come from the base file.
+-r ../requirements.txt
+
+fastapi>=0.115
+uvicorn[standard]>=0.32
+opentelemetry-instrumentation-fastapi
+httpx>=0.27

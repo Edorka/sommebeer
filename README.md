@@ -51,22 +51,39 @@ question → router (LLM intent classification, Pydantic-validated)
 - **Retrieval**: Weaviate (`Beer` collection), 11-dim taste-profile vectors (taste-alike similarity)
 - **Tracing**: Arize Phoenix (OTel + OpenInference LangChain instrumentation)
 
+## Layout
+
+```
+sommebeer/          # core agent package (graph, retriever, llm, config, tracing)
+cli/agent.py        # CLI deliverable — thin wiring only
+api/                # HTTP deliverable — FastAPI + its own requirements
+frontend/           # future UI — README holds the API contract
+tools/              # one-off ops scripts (vector backfill)
+tests/              # one suite for core + cli + api
+```
+
 ## Setup
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install -r requirements.txt -r api/requirements.txt
 cp .env.example .env            # adjust provider/endpoints if needed
-.venv/bin/python backfill_vectors.py   # one-time: taste-profile vectors (skips already-vectorized)
+.venv/bin/python -m tools.backfill_vectors   # one-time: taste-profile vectors
 ```
 
 ## Run
 
 ```bash
 phoenix serve --port 6006       # optional: tracing UI (default endpoint)
-.venv/bin/python agent.py                    # interactive chat
-.venv/bin/python agent.py -q "recommend me an IPA"
-.venv/bin/python agent.py -q "something similar to Flower Power"
+
+# CLI
+.venv/bin/python -m cli.agent                     # interactive chat
+.venv/bin/python -m cli.agent -q "recommend me an IPA"
+
+# HTTP API (docs at http://localhost:8000/docs)
+.venv/bin/uvicorn api.main:app --reload
+curl -s localhost:8000/chat -H 'Content-Type: application/json' \
+     -d '{"question": "something similar to Flower Power"}'
 ```
 
 ## Switching LLM provider

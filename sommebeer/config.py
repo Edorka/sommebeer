@@ -54,6 +54,13 @@ class PhoenixConfig(BaseModel):
     api_key: str | None = None
 
 
+class ApiConfig(BaseModel):
+    """HTTP deliverable settings — CORS is open only outside production."""
+
+    environment: Literal["development", "production"] = "development"
+    cors_origins: list[str] = Field(default_factory=list)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -65,6 +72,7 @@ class Settings(BaseSettings):
     llm: LLMConfig = Field(default_factory=LLMConfig)
     weaviate: WeaviateConfig = Field(default_factory=WeaviateConfig)
     phoenix: PhoenixConfig = Field(default_factory=PhoenixConfig)
+    api: ApiConfig = Field(default_factory=ApiConfig)
 
 
 def get_settings() -> Settings:
