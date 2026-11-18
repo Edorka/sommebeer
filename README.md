@@ -9,24 +9,30 @@
 
 [![tests](https://github.com/Edorka/sommebeer/actions/workflows/tests.yml/badge.svg)](https://github.com/Edorka/sommebeer/actions/workflows/tests.yml)
 ![Python](https://img.shields.io/badge/Python-3.12+-blue?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/HTTP-FastAPI-009688?logo=fastapi&logoColor=white)
+![Lit](https://img.shields.io/badge/UI-Lit-324FFF?logo=lit&logoColor=white)
+![Git submodule](https://img.shields.io/badge/data-beertor-F0DB4F?logo=gitbook&logoColor=black)
+
 ![LangGraph](https://img.shields.io/badge/agent-LangGraph-1C3C3C?logo=langchain&logoColor=white)
 ![LangChain](https://img.shields.io/badge/LLM-LangChain-1C3C3C)
 ![Pydantic](https://img.shields.io/badge/config-Pydantic-e92063?logo=pydantic&logoColor=white)
+![OpenAI-compatible](https://img.shields.io/badge/API-OpenAI--compatible-412991?logo=openai&logoColor=white)
+
 ![Weaviate](https://img.shields.io/badge/vector_DB-Weaviate-0B6BAC?logo=weaviate&logoColor=white)
 ![BM25](https://img.shields.io/badge/search-BM25%20%2B%20near_vector-8E44AD)
+
 ![Phoenix](https://img.shields.io/badge/observability-Arize_Phoenix-FF5C38?logo=arize&logoColor=white)
 ![OpenTelemetry](https://img.shields.io/badge/tracing-OpenTelemetry-4256F4?logo=opentelemetry&logoColor=white)
+
 ![llama.cpp](https://img.shields.io/badge/local_LLM-llama.cpp-6E4B9E?logo=llamadotcpp&logoColor=white)
 ![Qwen3](https://img.shields.io/badge/local_model-Qwen3--4B-615CEB)
 ![DeepInfra](https://img.shields.io/badge/LLM_provider-DeepInfra-0080FF)
 ![Vertex AI](https://img.shields.io/badge/LLM_provider-GCP_Vertex_AI-4285F4?logo=googlecloud&logoColor=white)
-![OpenAI-compatible](https://img.shields.io/badge/API-OpenAI--compatible-412991?logo=openai&logoColor=white)
-![FastAPI](https://img.shields.io/badge/HTTP-FastAPI-009688?logo=fastapi&logoColor=white)
-![Git submodule](https://img.shields.io/badge/data-beertor-F0DB4F?logo=gitbook&logoColor=black)
 
 A kind and helpful beer shop tender agent. Answers "recommend me an IPA" or
-"something like Flower Power" using a Weaviate vector database of 3,197 beers,
-with pluggable LLMs and Phoenix tracing.
+"something like Flower Power" using a Weaviate vector database of 3,197 beers —
+through a CLI, an HTTP API and a small Lit web UI — with pluggable LLMs and
+Phoenix tracing.
 
 > **Data source**: [beertor](./beertor) (git submodule) — the SQLite beer.db +
 > Weaviate vector store that powers the beer knowledge. Clone with
@@ -117,7 +123,13 @@ automatically when the stack is up, and auto-skip otherwise.
 
 ## Tags
 
-`python` `langgraph` `langchain` `fastapi` `pydantic` `pydantic-settings` `weaviate`
-`vector-database` `bm25` `near-vector-search` `rag` `llm-agent` `llama-cpp`
-`qwen3` `openai-compatible-api` `deepinfra` `google-cloud` `vertex-ai`
-`arize-phoenix` `opentelemetry` `openinference` `beer`
+**agents / RAG**: `langgraph` `langchain` `llm-agent` `rag` `near-vector-search` `bm25`
+
+**python stack**: `python` `fastapi` `pydantic` `pydantic-settings` `weaviate` `vector-database`
+`llama-cpp` `qwen3` `deepinfra` `google-cloud` `vertex-ai` `openai-compatible-api`
+
+**observability**: `arize-phoenix` `opentelemetry` `openinference`
+
+**frontend**: `lit` `web-components` `vite` `shadow-dom` `javascript`
+
+**domain**: `beer`
