@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from api.main import ChatRequest, create_app
+from backend.main import ChatRequest, create_app
 
 
 class StubGraph:

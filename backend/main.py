@@ -1,7 +1,7 @@
 """HTTP API for the beer tender — thin wiring, all logic in the core package.
 
 Run from the repo root:
-    uvicorn api.main:app --reload
+    uvicorn backend.main:app --reload
 """
 
 from __future__ import annotations

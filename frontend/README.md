@@ -1,6 +1,6 @@
 # frontend
 
-The UI for sommebeer — will talk to the HTTP API in [`../api/`](../api/).
+The UI for sommebeer — talks to the HTTP API in [`../backend/`](../backend/).
 
 ## Stack
 
@@ -22,7 +22,7 @@ npm run dev          # http://localhost:5173
 API on `http://localhost:8000` — so start the API first:
 
 ```bash
-uvicorn api.main:app --reload
+uvicorn backend.main:app --reload
 ```
 
 No CORS surface: the pages call relative URLs and only Vite talks to the API.
@@ -50,7 +50,7 @@ src/markdown.js                  tiny safe Markdown → Lit template parts
 
 ## API contract (v1)
 
-The UI speaks exactly two endpoints, defined in [`../api/README.md`](../api/README.md):
+The UI speaks exactly two endpoints, defined in [`../backend/README.md`](../backend/README.md):
 
 - `POST /chat` → `{"question": …}` → `{"answer": "<markdown>"}`
 - `GET /health` → `{"status": "ok", "weaviate": true, "llm": true}`

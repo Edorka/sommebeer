@@ -1,4 +1,4 @@
-# api — HTTP deliverable
+# backend — HTTP deliverable
 
 FastAPI service exposing the beer tender. All logic lives in the core
 package; this folder is thin wiring only.
@@ -6,7 +6,7 @@ package; this folder is thin wiring only.
 ```bash
 # install (from repo root) and run
 .venv/bin/pip install -r api/requirements.txt
-.venv/bin/uvicorn api.main:app --reload
+.venv/bin/uvicorn backend.main:app --reload
 ```
 
 Interactive docs (OpenAPI/Swagger): http://localhost:8000/docs

@@ -1,6 +1,6 @@
 # Build context must be the repo root:
-#   podman build -f api/Dockerfile -t sommebeer-api .
-#   docker  build -f api/Dockerfile -t sommebeer-api .
+#   podman build -f backend/Dockerfile -t sommebeer-api .
+#   docker  build -f backend/Dockerfile -t sommebeer-api .
 FROM python:3.12-slim AS builder
 
 ENV PIP_NO_CACHE_DIR=1 \
@@ -9,9 +9,9 @@ ENV PIP_NO_CACHE_DIR=1 \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# api/requirements.txt references ../requirements.txt, hence repo-root context
-COPY requirements.txt api/requirements.txt /tmp/
-RUN pip install -r /tmp/api/requirements.txt
+# backend/requirements.txt references ../requirements.txt, hence repo-root context
+COPY requirements.txt backend/requirements.txt /tmp/
+RUN pip install -r /tmp/backend/requirements.txt
 
 FROM python:3.12-slim
 
@@ -22,7 +22,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
 COPY --from=builder /opt/venv /opt/venv
 WORKDIR /app
 COPY sommebeer/ sommebeer/
-COPY api/ api/
+COPY backend/ backend/
 
 # app.state.graph is built at startup; runs as unprivileged user
 RUN useradd --system --create-home sommebeer \

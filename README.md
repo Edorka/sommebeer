@@ -63,17 +63,17 @@ question → router (LLM intent classification, Pydantic-validated)
 ```
 sommebeer/          # core agent package (graph, retriever, llm, config, tracing)
 cli/agent.py        # CLI deliverable — thin wiring only
-api/                # HTTP deliverable — FastAPI + its own requirements
+backend/            # HTTP deliverable — FastAPI + its own requirements
 frontend/           # UI — Lit web components, served by Vite
 tools/              # one-off ops scripts (vector backfill)
-tests/              # one suite for core + cli + api
+tests/              # one suite for core + backend
 ```
 
 ## Setup
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt -r api/requirements.txt
+.venv/bin/pip install -r requirements.txt -r backend/requirements.txt
 cp .env.example .env            # adjust provider/endpoints if needed
 .venv/bin/python -m tools.backfill_vectors   # one-time: taste-profile vectors
 ```
@@ -88,7 +88,7 @@ phoenix serve --port 6006       # optional: tracing UI (default endpoint)
 .venv/bin/python -m cli.agent -q "recommend me an IPA"
 
 # HTTP API (docs at http://localhost:8000/docs)
-.venv/bin/uvicorn api.main:app --reload
+.venv/bin/uvicorn backend.main:app --reload
 curl -s localhost:8000/chat -H 'Content-Type: application/json' \
      -d '{"question": "something similar to Flower Power"}'
 
