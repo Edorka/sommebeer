@@ -1,0 +1,27 @@
+# One-shot seeder — creates the Beer collection and imports beer.db
+# (3,612 beers). Idempotent: uuid5(v_beers.id) + drop+recreate collection.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: sommebeer
+  name: sommebeer-seed
+spec:
+  backoffLimit: 6          # retries until Weaviate is reachable/ready
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata: { labels: { app: seed } }
+    spec:
+      restartPolicy: OnFailure
+      imagePullSecrets:
+        - { name: ghcr-pull }
+      containers:
+        - name: seed
+          image: ghcr.io/edorka/sommebeer-data:v0.1
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: WEAVIATE_HOST,     value: weaviate }
+            - { name: WEAVIATE_PORT,     value: "8080" }
+            - { name: WEAVIATE_GRPC_PORT, value: "50051" }
+          resources:
+            requests: { memory: 256Mi, cpu: 200m }
+            limits:   { memory: 512Mi, cpu: 500m }

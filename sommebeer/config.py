@@ -13,6 +13,7 @@ class LLMConfig(BaseModel):
 
     provider: Literal["local", "deepinfra", "gcp"] = "local"
     temperature: float = 0.3
+    max_tokens: int = 1024  # explicit: DeepInfra defaults missing max_tokens to full context
 
     # local (llama-server / Ollama, OpenAI-compatible)
     model: str = "/opt/llm/Qwen3-4B-Instruct-2507-Q4_K_M.gguf"

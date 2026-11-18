@@ -9,11 +9,15 @@ ENV PIP_NO_CACHE_DIR=1 \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# backend/requirements.txt references ../requirements.txt, hence repo-root context
-COPY requirements.txt backend/requirements.txt /tmp/
-RUN pip install -r /tmp/backend/requirements.txt
+# backend/requirements.txt starts with "-r ../requirements.txt"; COPY flattening
+# would collide the two files, so install base then the deliverable's extras.
+COPY requirements.txt /tmp/requirements.txt
+COPY backend/requirements.txt /tmp/backend-requirements.txt
+RUN pip install -r /tmp/requirements.txt \
+    && pip install $(grep -Ev '^\s*(#|-r)' /tmp/backend-requirements.txt)
 
 FROM python:3.12-slim
+# slim variant: see Dockerfile.slim — the two files stay diffable
 
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
@@ -34,4 +38,4 @@ HEALTHCHECK --interval=15s --timeout=3s --retries=5 --start-period=30s \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"
 
 # SOMMEBEER_* settings arrive via env (config.py has env_prefix="SOMMEBEER_")
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

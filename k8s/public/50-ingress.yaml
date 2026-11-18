@@ -1,0 +1,20 @@
+# The only public entry point: sommebeer.ai.abscin.de -> web. HTTP for now;
+# DNS to the node IP is managed outside Git until the domain goes live.
+# TLS later: cert-manager + ClusterIssuer, then add the tls: section.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: sommebeer
+  name: web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: sommebeer.ai.abscin.de
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port: { number: 80 }

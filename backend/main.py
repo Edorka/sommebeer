@@ -73,10 +73,19 @@ def _instrument_http(app: FastAPI, tracer_provider) -> None:
 
 
 def _llm_reachable(settings) -> bool:
-    endpoint = urlparse(settings.llm.base_url)
+    """TCP reachability of the configured provider — provider-aware: the
+    local provider's URL lives in llm.base_url, while deepinfra/gcp have
+    their own endpoints."""
+    llm = settings.llm
+    if llm.provider == "deepinfra":
+        endpoint = urlparse("https://api.deepinfra.com/v1/openai")
+    elif llm.provider == "gcp":
+        return True  # no cheap socket probe for Vertex; trust the SDK path
+    else:
+        endpoint = urlparse(llm.base_url)
     try:
-        with socket.create_connection((endpoint.hostname, endpoint.port or 80),
-                                      timeout=1):
+        with socket.create_connection((endpoint.hostname, endpoint.port or 443),
+                                      timeout=2):
             return True
     except OSError:
         return False

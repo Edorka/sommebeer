@@ -1,0 +1,16 @@
+# Slim runtime for demo deployments: the pieces the agent actually speaks
+# at runtime with local/DeepInfra providers — same core as ../requirements.txt
+# minus arize-phoenix, openinference-* and langchain-google-vertexai.
+# Consequence: `PROVIDER=gcp` and Phoenix tracing are unavailable (they fail
+# soft instead — tracing.py logs "Phoenix tracing disabled").
+langgraph>=0.2.60
+langchain>=0.3.0
+langchain-openai>=0.3.0
+weaviate-client>=4.10.0
+pydantic>=2.9
+pydantic-settings>=2.6
+
+# HTTP deliverable extras (see backend/requirements.txt)
+fastapi>=0.115
+uvicorn[standard]>=0.32
+httpx>=0.27

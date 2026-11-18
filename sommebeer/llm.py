@@ -16,6 +16,7 @@ def _local_model(cfg: LLMConfig) -> BaseChatModel:
         base_url=cfg.base_url,
         api_key=cfg.api_key or "not-needed",
         temperature=cfg.temperature,
+        max_tokens=cfg.max_tokens,
     )
 
 
@@ -27,6 +28,7 @@ def _deepinfra_model(cfg: LLMConfig) -> BaseChatModel:
         base_url="https://api.deepinfra.com/v1/openai",
         api_key=cfg.di_api_key,
         temperature=cfg.temperature,
+        max_tokens=cfg.max_tokens,
     )
 
 
@@ -38,6 +40,7 @@ def _gcp_model(cfg: LLMConfig) -> BaseChatModel:
         project=cfg.gcp_project,
         location=cfg.gcp_location,
         temperature=cfg.temperature,
+        max_tokens=cfg.max_tokens,
     )
 
 
