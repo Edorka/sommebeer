@@ -10,6 +10,7 @@ from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
 from .retriever import BeerRetriever
+from .guard import smuggle_shape
 from .schemas import BeerRecord, RouterDecision
 
 # ── prompts ────────────────────────────────────────────────────────────────
@@ -67,6 +68,7 @@ class AgentState(BaseModel):
     count: int | None = None
     beers: list[BeerRecord] = Field(default_factory=list)
     answer: str | None = None
+    refused: bool = False
 
 
 # ── untrusted-input hygiene ───────────────────────────────────────────────
@@ -134,9 +136,15 @@ def _route(llm, question: str) -> RouterDecision:
 
 def make_router_node(llm):
     def router_node(state: AgentState) -> dict:
+        # gate 0: rule-smuggling never reaches the router's LLM at all
+        shape = smuggle_shape(state.question)
+        if shape:
+            return {"intent": "general", "style": None, "beer_name": None,
+                    "count": None, "refused": True}
         decision = _route(llm, state.question)
         return {"intent": decision.intent, "style": decision.style,
-                "beer_name": decision.beer_name, "count": decision.count}
+                "beer_name": decision.beer_name, "count": decision.count,
+                "refused": False}
     return router_node
 
 
@@ -169,8 +177,16 @@ def _stock_block(beers: list[BeerRecord]) -> str:
             "ask what style they usually enjoy.")
 
 
+REFUSAL = ("I'm just the friendly tender here, and I only talk about the "
+           "beers on my shelf! Tell me a style or a beer you enjoy and I'll "
+           "find something for you. 🍻")
+
+
 def make_generate_node(llm):
     def generate_node(state: AgentState) -> dict:
+        if state.refused:
+            # canned: the smuggling never got a second chance at an instruction
+            return {"answer": REFUSAL}
         prompt = f"{_stock_block(state.beers)}\n\nCUSTOMER: {state.question}"
         answer = llm.invoke([
             SystemMessage(content=TENDER_SYSTEM),
