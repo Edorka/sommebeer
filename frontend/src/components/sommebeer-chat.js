@@ -11,7 +11,10 @@ export class SommebeerChat extends LitElement {
     draft: { state: true },
     busy: { state: true },
     error: { state: true },
+    acknowledged: { state: true },
   };
+
+  static AGREEMENT_TITLE = "You must confirm you understood the disclaimers above before asking the tender.";
 
   constructor() {
     super();
@@ -19,6 +22,7 @@ export class SommebeerChat extends LitElement {
     this.draft = '';
     this.busy = false;
     this.error = null;
+    this.acknowledged = false;
   }
 
   static styles = css`
@@ -186,6 +190,20 @@ export class SommebeerChat extends LitElement {
       margin: 0.4rem 0;
     }
 
+    .agree {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin: 0.4rem 0 0.6rem;
+      cursor: pointer;
+      color: var(--ink);
+      font-size: 0.9rem;
+    }
+    .agree input {
+      accent-color: var(--amber);
+      cursor: pointer;
+    }
+
     @media (max-width: 480px) {
       .bubble {
         max-width: 94%;
@@ -206,8 +224,9 @@ export class SommebeerChat extends LitElement {
 
   send(event) {
     event.preventDefault();
+    if (!this.acknowledged || this.busy) return;
     const question = this.draft.trim();
-    if (!question || this.busy) return;
+    if (!question) return;
     this.lines = [...this.lines, { role: 'user', text: question }];
     this.draft = '';
     this._input.value = ''; // belt-and-braces: never leave typed text behind
@@ -299,9 +318,14 @@ export class SommebeerChat extends LitElement {
             maxlength="2000"
             placeholder=${this.placeholder}
             @input=${(e) => (this.draft = e.currentTarget.value)}
-            ?disabled=${this.busy}
+            ?disabled=${this.busy || !this.acknowledged}
+            title=${this.acknowledged ? '' : SommebeerChat.AGREEMENT_TITLE}
           />
-          <button type="submit" ?disabled=${this.busy || !this.draft.trim()}>
+          <button
+            type="submit"
+            ?disabled=${this.busy || !this.acknowledged || !this.draft.trim()}
+            title=${this.acknowledged ? '' : SommebeerChat.AGREEMENT_TITLE}
+          >
             ${this.busy ? '…' : 'send'}
           </button>
         </form>
@@ -314,6 +338,10 @@ export class SommebeerChat extends LitElement {
           <p>
             🍜 conversations are saved for evaluation and product improvement.
           </p>
+          <label class="agree">
+            <input type="checkbox" ?checked=${this.acknowledged} @change=${() => (this.acknowledged = !this.acknowledged)} />
+            I understood
+          </label>
         </footer>
       </main>
     `;
