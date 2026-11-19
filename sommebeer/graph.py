@@ -10,7 +10,7 @@ from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
 from .retriever import BeerRetriever
-from .guard import smuggle_shape
+from .guard import foreign_script, smuggle_shape
 from .schemas import BeerRecord, RouterDecision
 
 # ── prompts ────────────────────────────────────────────────────────────────
@@ -69,6 +69,7 @@ class AgentState(BaseModel):
     beers: list[BeerRecord] = Field(default_factory=list)
     answer: str | None = None
     refused: bool = False
+    script_error: bool = False
 
 
 # ── untrusted-input hygiene ───────────────────────────────────────────────
@@ -137,10 +138,14 @@ def _route(llm, question: str) -> RouterDecision:
 def make_router_node(llm):
     def router_node(state: AgentState) -> dict:
         # gate 0: rule-smuggling never reaches the router's LLM at all
-        shape = smuggle_shape(state.question)
-        if shape:
+        if smuggle_shape(state.question):
             return {"intent": "general", "style": None, "beer_name": None,
                     "count": None, "refused": True}
+        # gate 1: non-Latin scripts are served the canned answer too —
+        # unservable as honest questions, attractive as obfuscated smuggles
+        if foreign_script(state.question):
+            return {"intent": "general", "style": None, "beer_name": None,
+                    "count": None, "refused": True, "script_error": True}
         decision = _route(llm, state.question)
         return {"intent": decision.intent, "style": decision.style,
                 "beer_name": decision.beer_name, "count": decision.count,
@@ -181,12 +186,19 @@ REFUSAL = ("I'm just the friendly tender here, and I only talk about the "
            "beers on my shelf! Tell me a style or a beer you enjoy and I'll "
            "find something for you. 🍻")
 
+SCRIPT_REFUSAL = ("Sorry — this tender only speaks English and Spanish. "
+                  "Ask me again in either and I'll get right to the shelf! 🍻")
+
+
+def _refusal(state: AgentState) -> str:
+    return SCRIPT_REFUSAL if state.script_error else REFUSAL
+
 
 def make_generate_node(llm):
     def generate_node(state: AgentState) -> dict:
         if state.refused:
             # canned: the smuggling never got a second chance at an instruction
-            return {"answer": REFUSAL}
+            return {"answer": _refusal(state)}
         prompt = f"{_stock_block(state.beers)}\n\nCUSTOMER: {state.question}"
         answer = llm.invoke([
             SystemMessage(content=TENDER_SYSTEM),

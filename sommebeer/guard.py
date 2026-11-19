@@ -46,6 +46,27 @@ _COMPILED = {
     for shape, patterns in _SHAPES.items()
 }
 
+# Non-Latin scripts: honest customers here write (Spanish) English; a wall of
+# hanzi or Cyrillic is either unservable or obfuscated smuggling. Blocked
+# pre-LLM the same way, with its own canned answer.
+_FOREIGN_SCRIPT = re.compile(
+    "["
+    "\u0370-\u03ff"   # Greek
+    "\u0400-\u04ff"   # Cyrillic
+    "\u0590-\u05ff"   # Hebrew
+    "\u0600-\u06ff"   # Arabic
+    "\u0900-\u097f"   # Devanagari
+    "\u3040-\u30ff"   # kana
+    "\u3400-\u4dbf"   # CJK extension A
+    "\u4e00-\u9fff"   # CJK
+    "\uac00-\ud7af"   # hangul
+    "]")
+
+
+def foreign_script(question: str) -> bool:
+    """True when the message contains any non-Latin script character."""
+    return bool(_FOREIGN_SCRIPT.search(str(question or "")))
+
 
 def smuggle_shape(question: str) -> str | None:
     """Name of the first matched smuggling shape, or None if the message is
