@@ -1,0 +1,16 @@
+# Let's Encrypt account + HTTP-01 solver via the Traefik ingress class.
+# The ACME account email only receives issuance/renewal notices.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: sommebeer.ai.abscin@hermes.abscin.de
+    privateKeySecretRef:
+      name: letsencrypt-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: traefik

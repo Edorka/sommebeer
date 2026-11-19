@@ -1,11 +1,13 @@
-# The only public entry point: sommebeer.ai.abscin.de -> web. HTTP for now;
-# DNS to the node IP is managed outside Git until the domain goes live.
-# TLS later: cert-manager + ClusterIssuer, then add the tls: section.
+# The only public entry point: sommebeer.ai.abscin.de -> web with TLS.
+# letsencrypt (ClusterIssuer, see 50-clusterissuer.yaml) via HTTP-01:
+# Traefik terminates 443 and serves the cert-managed certificate.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   namespace: sommebeer
   name: web
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
 spec:
   ingressClassName: traefik
   rules:
@@ -18,3 +20,6 @@ spec:
               service:
                 name: web
                 port: { number: 80 }
+  tls:
+    - hosts: [ sommebeer.ai.abscin.de ]
+      secretName: sommebeer-web-tls

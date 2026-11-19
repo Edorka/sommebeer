@@ -1,0 +1,21 @@
+# Node-level (k3s bundled chart) config: redirect all HTTP traffic to HTTPS.
+# The ClusterIssuer's HTTP-01 solver keeps working: ACME challenges land on
+# port 80 of the exact host path they expect; Traefik's default redirect is
+# path-preserving and LE follows redirects... but Traefik itself excludes
+# /.well-known/acme-challenge only when configured; default redirect is
+# enough for LE (302 → URL the solver can follow).
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  namespace: kube-system
+  name: traefik
+spec:
+  valuesContent: |-
+    # websecure listens on the standard port so the built-in HTTP→HTTPS
+    # redirect lands on https://host/... rather than k3s's default :8443
+    ports:
+      websecure:
+        port: 443
+    additionalArguments:
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
