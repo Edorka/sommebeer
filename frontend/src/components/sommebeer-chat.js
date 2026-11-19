@@ -57,6 +57,36 @@ export class SommebeerChat extends LitElement {
       animation: rise 0.25s ease-out;
     }
 
+    /* the thumbs row: subordinate, shows up only for real answers */
+    .feedback {
+      display: flex;
+      gap: 0.25rem;
+      justify-content: flex-end;
+      margin-top: 0.5rem;
+    }
+    .feedback button {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      opacity: 0.45;
+      padding: 0.1rem 0.25rem;
+      border-radius: 6px;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    .feedback button:hover {
+      opacity: 0.95;
+      transform: scale(1.1);
+    }
+    .feedback button:disabled {
+      cursor: default;
+      opacity: 0.3;
+    }
+    .feedback button.voted {
+      opacity: 1;
+      background: var(--paper-deep);
+    }
+
     .bubble-tender {
       align-self: flex-start;
       background: var(--card);
@@ -185,10 +215,18 @@ export class SommebeerChat extends LitElement {
     this.busy = true;
     this.error = null;
     this._ask(question)
-      .then((answer) => {
-        this.lines = [...this.lines, { role: 'assistant', text: answer }];
-      })
-      .catch((err) => {
+      .then((response) => {
+        this.lines = [
+          ...this.lines,
+          {
+            role: 'assistant',
+            text: response.answer,
+            traceId: response.trace_id,
+            spanId: response.span_id,
+            rating: null,
+          },
+        ];
+      })      .catch((err) => {
         this.error = String(err?.message ?? err);
       })
       .finally(() => {
@@ -207,7 +245,38 @@ export class SommebeerChat extends LitElement {
       const detail = await res.json().catch(() => null);
       throw new Error(detail?.detail?.[0]?.msg ?? `HTTP ${res.status}`);
     }
-    return (await res.json()).answer;
+    return await res.json();
+  }
+
+  /**
+   * Thumbs on one answer go straight into Phoenix as a span annotation.
+   * Re-voting simply posts again: the backend keys the annotation to the
+   * turn, so it replaces rather than stacks.
+   */
+  async vote(index, rating) {
+    const message = this.lines[index];
+    if (!message?.spanId || message.rating === rating) return;
+    const previous = message.rating;
+    try {
+      this.lines = this.lines.map((m, i) =>
+        i === index ? { ...m, rating } : m);
+      const res = await fetch('/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trace_id: message.traceId,
+          span_id: message.spanId,
+          rating,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      // restore the previous visual state; the UI never gainsays the server
+      this.lines = this.lines.map((m, i) =>
+        i === index ? { ...m, rating: previous } : m
+      );
+      this.error = typeof err === 'string' ? err : (err?.message ?? String(err));
+    }
   }
 
   render() {
@@ -221,13 +290,31 @@ export class SommebeerChat extends LitElement {
             </div>`
           : nothing}
         ${this.lines.map(
-          (m) =>
+          (m, i) =>
             html`<div
               class=${`bubble ${m.role === 'user' ? 'bubble-user' : 'bubble-tender'}`}
             >
               ${m.role === 'assistant'
                 ? html`<md-block text=${m.text}></md-block>`
                 : m.text}
+              ${m.role === 'assistant' && m.spanId
+                ? html`<span class="feedback">
+                    <button
+                      type="button"
+                      class=${m.rating === 'up' ? 'voted' : ''}
+                      aria-label="good answer"
+                      title="told the tender this was useful"
+                      @click=${() => this.vote(i, 'up')}
+                    >👍</button>
+                    <button
+                      type="button"
+                      class=${m.rating === 'down' ? 'voted' : ''}
+                      aria-label="bad answer"
+                      title="told the tender this missed"
+                      @click=${() => this.vote(i, 'down')}
+                    >👎</button>
+                  </span>`
+                : nothing}
             </div>`,
         )}
         ${this.busy
