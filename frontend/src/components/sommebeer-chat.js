@@ -311,6 +311,9 @@ export class SommebeerChat extends LitElement {
             ⚠️ alcohol consumption is <strong>discouraged</strong>; for adults (18+). Drink
             responsibly.
           </p>
+          <p>
+            🍜 conversations are saved for evaluation and product improvement.
+          </p>
         </footer>
       </main>
     `;

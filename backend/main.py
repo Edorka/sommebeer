@@ -67,9 +67,12 @@ def _instrument_http(app: FastAPI, tracer_provider) -> None:
     """HTTP spans for every request, shown alongside LLM/retriever spans."""
     if tracer_provider is None:
         return
-    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+    try:
+        from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-    FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer_provider)
+        FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer_provider)
+    except ImportError as exc:  # noqa: BLE001 — optional dep, fail soft
+        print(f"[sommebeer] FastAPI HTTP tracing disabled: {exc}")
 
 
 def _llm_reachable(settings) -> bool:

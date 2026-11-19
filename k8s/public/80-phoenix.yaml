@@ -1,0 +1,66 @@
+# Phoenix (Arize) — OTel trace store + UI. NOT exposed via ingress: reached
+# from the API pod and from a laptop via
+#   kubectl port-forward svc/phoenix 6006:6006 -n sommebeer
+# Spans live in emptyDir: pod restarts clear history (demo reality; use a PVC
+# if/when you want persistence).
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: sommebeer
+  name: phoenix
+  labels: { app: phoenix }
+spec:
+  selector: { app: phoenix }
+  ports:
+    - { name: http, port: 6006, targetPort: 6006 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: sommebeer
+  name: phoenix
+  labels: { app: phoenix }
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate    # single-user, single pod: never two at once
+  selector: { matchLabels: { app: phoenix } }
+  template:
+    metadata: { labels: { app: phoenix } }
+    spec:
+      containers:
+        - name: phoenix
+          image: arizephoenix/phoenix:latest
+          imagePullPolicy: IfNotPresent
+          ports: [ { containerPort: 6006 } ]
+          env:
+            - { name: PHOENIX_PORT,            value: "6006" }
+            - { name: PHOENIX_WORKING_DIR,     value: /data }
+            # bind all interfaces; newer Phoenix defaults to localhost-only
+            - { name: PHOENIX_BIND_ADDRESS,    value: 0.0.0.0 }
+            # internal collector only (weaviate-style netpol isolation); the
+            # newer images default to auth-on, which would 401 span exports
+            - { name: PHOENIX_ENABLE_AUTH,     value: "false" }
+            # quieter logs than the alembic DEBUG storm
+            - { name: PHOENIX_LOG_SQL,         value: "FALSE" }
+          resources:
+            requests: { memory: 256Mi, cpu: 100m }
+            limits:   { memory: 1Gi,   cpu: "1" }
+          # first boot runs DB migrations: startupProbe owns the readiness
+          # gate (2 min allowance), then the normal cadence takes over
+          startupProbe:
+            httpGet: { path: /healthz, port: 6006 }
+            failureThreshold: 12
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /healthz, port: 6006 }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 6006 }
+            periodSeconds: 15
+            timeoutSeconds: 3
+          volumeMounts:
+            - { name: spans, mountPath: /data }
+      volumes:
+        - name: spans
+          emptyDir: {}
