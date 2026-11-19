@@ -21,10 +21,12 @@ export class SommebeerTc extends LitElement {
 
   static styles = css`
     :host {
-      /* grow to fill the wrap; lets the chat area keep its own scroll logic */
+      /* content-sized (never stretched): this is what keeps the whole
+         cluster vertically centered in .wrap; min-height 0 lets the chat
+         area shrink on short viewports */
       display: flex;
       flex-direction: column;
-      flex: 1;
+      flex: 0 1 auto;
       min-height: 0;
     }
     .notice {

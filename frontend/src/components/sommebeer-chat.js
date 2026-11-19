@@ -30,7 +30,9 @@ export class SommebeerChat extends LitElement {
     :host {
       display: flex;
       flex-direction: column;
-      flex: 1;
+      /* basis auto = content height (the tavern below caps itself at 16cm);
+         grows/shrinks with the space t-c actually has */
+      flex: 1 1 auto;
       min-height: 0;
     }
 
