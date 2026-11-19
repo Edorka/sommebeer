@@ -2,77 +2,36 @@ import { LitElement, css, html, nothing } from 'lit';
 import './md-block.js';
 
 /**
- * sommebeer-chat — the whole tavern in one custom element.
- * All styling lives in this component's shadow root (embedded via `static styles`).
+ * sommebeer-chat — the conversation itself: transcript + ask bar.
+ * Policy lives up the tree: `acknowledged` (agreement state) and
+ * `agreementTitle` (hover hint) arrive one-way from sommebeer-t-c.
  */
 export class SommebeerChat extends LitElement {
   static properties = {
+    acknowledged: { type: Boolean },
+    agreementTitle: { type: String, attribute: 'agreement-title' },
     lines: { state: true },
     draft: { state: true },
     busy: { state: true },
     error: { state: true },
-    acknowledged: { state: true },
   };
-
-  static AGREEMENT_TITLE = "You must confirm you understood the disclaimers above before asking the tender.";
 
   constructor() {
     super();
+    this.acknowledged = false;
+    this.agreementTitle = '';
     this.lines = [];
     this.draft = '';
     this.busy = false;
     this.error = null;
-    this.acknowledged = false;
   }
 
   static styles = css`
     :host {
-      /* palette — scoped tokens for both this element and md-block's shadow */
-      --paper: #f7f0e3;
-      --paper-deep: #efe4d0;
-      --ink: #3b2f23;
-      --ink-soft: #7a6a55;
-      --amber: #b3772f;
-      --amber-deep: #8b5a1f;
-      --card: #fffdf7;
-      --radius: 14px;
-
-      /* layout instead of the old body{} rules */
-      display: block;
-      font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
-      line-height: 1.55;
-      color: var(--ink);
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    .wrap {
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      min-height: 100vh;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    h1 {
-      margin: 0;
-      font-weight: 700;
-      color: var(--amber-deep);
-      font-size: 2rem;
-      letter-spacing: 0.02em;
-    }
-    .tagline {
-      margin: 0.25rem 0 0;
-      color: var(--ink-soft);
-      font-style: italic;
+      flex: 1;
+      min-height: 0;
     }
 
     /* the conversation area — capped so it sits close to the ask bar
@@ -180,30 +139,6 @@ export class SommebeerChat extends LitElement {
       cursor: default;
     }
 
-    .notice {
-      margin-top: 0.9rem;
-      text-align: center;
-      font-size: 0.78rem;
-      color: var(--ink-soft);
-    }
-    .notice p {
-      margin: 0.4rem 0;
-    }
-
-    .agree {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      margin: 0.4rem 0 0.6rem;
-      cursor: pointer;
-      color: var(--ink);
-      font-size: 0.9rem;
-    }
-    .agree input {
-      accent-color: var(--amber);
-      cursor: pointer;
-    }
-
     @media (max-width: 480px) {
       .bubble {
         max-width: 94%;
@@ -211,9 +146,26 @@ export class SommebeerChat extends LitElement {
     }
   `;
 
+  static REPLIES = [
+    'Is there something more I can help you with?',
+    'Still thirsty?',
+    'There is no such thing as a hurry with a good beer',
+    "Take your time — the next pint isn't going anywhere",
+    'Another round, perhaps?',
+    'The cellar is full; what else can I fetch you?',
+    'A good pour deserves company — anything else?',
+    'One suggestion down; what shall we try next?',
+  ];
+
+  get placeholder() {
+    const served = this.lines.filter((l) => l.role === 'assistant').length;
+    if (!served) return 'What would you like to drink?';
+    return SommebeerChat.REPLIES[(served - 1) % SommebeerChat.REPLIES.length];
+  }
+
   firstUpdated() {
     this._input = this.renderRoot.querySelector('input');
-    this._input?.focus();
+    if (this.acknowledged) this._input?.focus();
   }
 
   updated() {
@@ -258,92 +210,53 @@ export class SommebeerChat extends LitElement {
     return (await res.json()).answer;
   }
 
-  static REPLIES = [
-    "Is there something more I can help you with?",
-    "Still thirsty?",
-    "There is no such thing as a hurry with a good beer",
-    "Take your time — the next pint isn't going anywhere",
-    "Another round, perhaps?",
-    "The cellar is full; what else can I fetch you?",
-    "A good pour deserves company — anything else?",
-    "One suggestion down; what shall we try next?",
-  ];
-
-  get placeholder() {
-    const served = this.lines.filter((l) => l.role === 'assistant').length;
-    if (!served) return 'What would you like to drink?';
-    return SommebeerChat.REPLIES[(served - 1) % SommebeerChat.REPLIES.length];
-  }
-
   render() {
+    const blocked = !this.acknowledged || this.busy;
     return html`
-      <main class="wrap">
-        <header>
-          <h1>sommebeer <span aria-hidden="true">🍺</span></h1>
-          <p class="tagline">
-            your beer store tender — questions or a beer you like, it makes a suggestion
-          </p>
-        </header>
+      <section class="tavern" aria-live="polite">
+        ${this.lines.length === 0 && !this.busy
+          ? html`<div class="bubble bubble-tender">
+              Tell me a style ("something strong and fruity") or a beer you like ("similar to
+              Flower Power") and I'll bring a suggestion from the shelf.
+            </div>`
+          : nothing}
+        ${this.lines.map(
+          (m) =>
+            html`<div
+              class=${`bubble ${m.role === 'user' ? 'bubble-user' : 'bubble-tender'}`}
+            >
+              ${m.role === 'assistant'
+                ? html`<md-block text=${m.text}></md-block>`
+                : m.text}
+            </div>`,
+        )}
+        ${this.busy
+          ? html`<div class="bubble bubble-tender thinking">
+              the tender is going down to the cellar…
+            </div>`
+          : nothing}
+        ${this.error
+          ? html`<div class="bubble bubble-error">⚠ ${this.error}</div>`
+          : nothing}
+      </section>
 
-        <section class="tavern" aria-live="polite">
-          ${this.lines.length === 0 && !this.busy
-            ? html`<div class="bubble bubble-tender">
-                Tell me a style ("something strong and fruity") or a beer you like ("similar to
-                Flower Power") and I'll bring a suggestion from the shelf.
-              </div>`
-            : nothing}
-          ${this.lines.map(
-            (m) =>
-              html`<div
-                class=${`bubble ${m.role === 'user' ? 'bubble-user' : 'bubble-tender'}`}
-              >
-                ${m.role === 'assistant'
-                  ? html`<md-block text=${m.text}></md-block>`
-                  : m.text}
-              </div>`,
-          )}
-          ${this.busy
-            ? html`<div class="bubble bubble-tender thinking">
-                the tender is going down to the cellar…
-              </div>`
-            : nothing}
-          ${this.error
-            ? html`<div class="bubble bubble-error">⚠ ${this.error}</div>`
-            : nothing}
-        </section>
-
-        <form class="askbar" @submit=${this.send}>
-          <input
-            value=${this.draft}
-            maxlength="2000"
-            placeholder=${this.placeholder}
-            @input=${(e) => (this.draft = e.currentTarget.value)}
-            ?disabled=${this.busy || !this.acknowledged}
-            title=${this.acknowledged ? '' : SommebeerChat.AGREEMENT_TITLE}
-          />
-          <button
-            type="submit"
-            ?disabled=${this.busy || !this.acknowledged || !this.draft.trim()}
-            title=${this.acknowledged ? '' : SommebeerChat.AGREEMENT_TITLE}
-          >
-            ${this.busy ? '…' : 'send'}
-          </button>
-        </form>
-
-        <footer class="notice">
-          <p>
-            ⚠️ alcohol consumption is <strong>discouraged</strong>; for adults (18+). Drink
-            responsibly.
-          </p>
-          <p>
-            🍜 conversations are saved for evaluation and product improvement.
-          </p>
-          <label class="agree">
-            <input type="checkbox" ?checked=${this.acknowledged} @change=${() => (this.acknowledged = !this.acknowledged)} />
-            I understood
-          </label>
-        </footer>
-      </main>
+      <form class="askbar" @submit=${this.send}>
+        <input
+          value=${this.draft}
+          maxlength="2000"
+          placeholder=${this.placeholder}
+          @input=${(e) => (this.draft = e.currentTarget.value)}
+          ?disabled=${blocked}
+          title=${this.acknowledged ? '' : this.agreementTitle}
+        />
+        <button
+          type="submit"
+          ?disabled=${blocked || !this.draft.trim()}
+          title=${this.acknowledged ? '' : this.agreementTitle}
+        >
+          ${this.busy ? '…' : 'send'}
+        </button>
+      </form>
     `;
   }
 }
