@@ -80,13 +80,18 @@ def _register_cors(app: FastAPI, settings) -> None:
 
 
 def _instrument_http(app: FastAPI, tracer_provider) -> None:
-    """HTTP spans for every request, shown alongside LLM/retriever spans."""
+    """HTTP spans for real traffic, shown alongside LLM/retriever spans.
+
+    /health is excluded: kubelet + nginx probe it every few seconds and it
+    involves no agent logic — instrumenting it would drown Phoenix in noise.
+    """
     if tracer_provider is None:
         return
     try:
         from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-        FastAPIInstrumentor.instrument_app(app, tracer_provider=tracer_provider)
+        FastAPIInstrumentor.instrument_app(
+            app, tracer_provider=tracer_provider, excluded_urls="health")
     except ImportError as exc:  # noqa: BLE001 — optional dep, fail soft
         print(f"[sommebeer] FastAPI HTTP tracing disabled: {exc}")
 
